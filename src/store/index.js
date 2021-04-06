@@ -12,88 +12,105 @@ export default new Vuex.Store({
     stateOfLock: 'Unlocked',
     stateOfProcessArray: ['Ready', 'Error', 'Locking...', 'Unlocking...', 'Service', 'Validating...'],
     stateOfProcess: 'Ready',
+    prePassword: '',
     password: '',
   },
   mutations: {
     idleScreen(state, value) {
       state.screenBacklight = value;
     },
-    inputValue(state, inputValue) {
-      if(!state.password) {
+    inputValue(state, value) {
+      clearTimeout(this.idleScreenTimeout);
+      state.screenBacklight = '#7fffff';
+      if(value != 'L'){
         if(state.stateOfProcessArray.includes(state.stateOfProcess)) {
           state.stateOfProcess = '';
         }
         if(state.stateOfProcess.length < 6) {
-          state.stateOfProcess += inputValue;
+          state.stateOfProcess += value;
+          state.prePassword += value;
         }
-        state.screenBacklight = '#7fffff';
-        clearTimeout(this.idleScreenTimeout)
-      } else {
-        // password exists - validation
-        if(state.stateOfProcessArray.includes(state.stateOfProcess)) {
-          state.stateOfProcess = '';
-        }
-        if(state.stateOfProcess.length < 6) {
-          state.stateOfProcess += inputValue;
-        } 
-        if(state.stateOfProcess.length == 6) {
-          if(state.password == state.stateOfProcess) {
-            // validacija bla bla
-            state.stateOfProcess = 'Validating...';
-            this.idleInputTimeout = setTimeout(() => {
-              state.stateOfProcess = 'Unlocking...';
-            }, 2000);
-            setTimeout(() => {
-              state.stateOfProcess = 'Ready';
-              state.password = '';
-              state.stateOfLock = 'Unlocked';
-            }, 4000);
-
-          } else {
-            state.stateOfProcess = 'Validating...';
-            this.idleInputTimeout = setTimeout(() => {
-              state.stateOfProcess = 'Error';
-            }, 2000);
-          }
-        }
-      
-        console.log('state of processes', state.stateOfProcess);
-        state.screenBacklight = '#7fffff';
-        clearTimeout(this.idleScreenTimeout)
       }
     },
     inputTimeout(state) {
-      if(state.stateOfProcess.length == 6 && state.password.length == 0) {
-        state.password = state.stateOfProcess;
-        state.stateOfProcess = 'Locking...';
-        this.idleInputTimeout = setTimeout(() => {
-          state.stateOfLock = 'Locked';
-          state.stateOfProcess = 'Ready'
-        }, 3000);
-      } else if(state.password.length < 6){
-        //ne treba error, treba da li je tacan
-        state.stateOfProcess = 'Error';
-      }
+      //provera unosa 
+      setTimeout(() => {
+        state.stateOfProcess = 'Validating...';
+      }, 500);
+      setTimeout(() => {
+        // tacan unos
+        if(state.prePassword.length == 6) {
+          console.log('pass je 6');
+          //ako je tacan unos onda pitam da li password postoji
+          if(!state.password) {
+            setTimeout(() => {
+              state.stateOfProcess = 'Locking...';
+            }, 1500);
+            setTimeout(() => {
+              state.password = state.prePassword;
+              state.prePassword = '';
+              state.stateOfProcess = 'Ready';
+              state.stateOfLock = 'Locked';
+            }, 4500);
+          } else {
+            // password postoji
+            // tacan password
+            if(state.password == state.prePassword) {
+              setTimeout(() => {
+                state.stateOfProcess = 'Unlocking...';
+              }, 1500);
+              setTimeout(() => {
+                state.password = '';
+                state.prePassword = '';
+                state.stateOfProcess = 'Ready';
+                state.stateOfLock = 'Unlocked';
+              }, 4500);
+            }
+            // netacan password
+            else {
+              setTimeout(() => {
+                state.stateOfProcess = 'Error';
+              }, 1000);
+              setTimeout(() => {
+                state.stateOfProcess = 'Ready';
+              }, 2500);
+              state.prePassword = '';
+            }
+          }
+        } else {
+          setTimeout(() => {
+            state.stateOfProcess = 'Error';
+          }, 1000);
+          setTimeout(() => {
+            state.stateOfProcess = 'Ready';
+          }, 2500);
+          state.prePassword = '';
+        }
+      }, 1500);
     }
   },
   actions: {
     idleScreen({ commit }) {
       this.idleScreenTimeout = setTimeout(() => {
-        commit('idleScreen','#47b2b2');
-      }, 5000)
+        commit('idleScreen', '#47b2b2');
+      }, 5000);
     },
-    inputValue({ dispatch, commit }, value) { 
+    inputValue({ dispatch, commit }, value) {
       if(this.idleInputTimeout) {
         clearTimeout(this.idleInputTimeout);
       }
       commit('inputValue', value);
+      dispatch('inputTimeout', value);
       dispatch('idleScreen');
-      dispatch('inputTimeout');
     },
-    inputTimeout({ commit }) {
-      this.idleInputTimeout = setTimeout(() => {
+    inputTimeout({ commit }, value) {
+      if(value == 'L') {
         commit('inputTimeout');
-      }, 1200);
+      } else {
+        this.idleInputTimeout = setTimeout(() => {
+          commit('inputTimeout');
+        }, 1200);
+      }
     }
   },
   getters: {

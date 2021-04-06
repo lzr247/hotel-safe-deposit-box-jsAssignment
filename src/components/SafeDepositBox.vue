@@ -5,7 +5,16 @@
             <div id="stateOfProcess">{{$store.state.stateOfProcess}}</div>
         </div>
         <div class="numKeypad">
-            <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)"><p>{{value}}</p></button>
+            <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)">
+                {{value}}
+                <!-- <p v-if="(index+1)%2==0">{{btnIcons[index]}}</p> -->
+                <p v-if="index == 1">&#129045;</p>
+                <p v-if="index == 3">&#129044;</p>
+                <p v-if="index == 5">&#129046;</p>
+                <p v-if="index == 7">&#129047;</p>
+                <p v-if="index == 9">B</p>
+                <p v-if="index == 11">A</p>
+            </button>
         </div>
         <span>S/N: 4815162342</span>
     </div>
@@ -14,8 +23,12 @@
 <script>
 export default {
     name: 'SafeDepositBox',
+    data() {
+        return {
+            btnIcons: ['&#129045;', '&#129044;', '&#129046;', '&#129047;', 'B', 'A'],
+        }
+    },
     mounted() {
-        // start tajmera od 5s za gasenje ekrana
         this.$store.dispatch('idleScreen');
     }
 };
@@ -25,23 +38,38 @@ export default {
     .safeDepositBox {
         position: relative;
         background: #7d7d7f;
-        width: 450px;
+        width: 500px;
         height: 700px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: space-evenly;
+        border: 2px solid #000;
+        border-radius: 5px;
+        box-shadow: 0 0 1px #000;
         .backlitScreen {
             color: #434343;
-            height: 120px;
+            height: 140px;
             width: 85%;
             border-radius: 5px;
+            border: 1px solid #434343;
+            box-shadow: 0 0 2px #434343;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            position: relative;
             #stateOfProcess {
                 text-align: right;
-                font-size: 26px;
+                font-size: 3rem;
+                position: absolute;
+                bottom: 5px;
+                right: 10px;
+            }
+            #stateOfLock {
+                font-size: 1.3rem;
+                position: absolute;
+                top: 5px;
+                left: 10px;
             }
         }
         .numKeypad {
@@ -61,14 +89,24 @@ export default {
                 justify-content: center;
                 align-items: center;
                 cursor: pointer;
+                position: relative;
                 &:focus {
                     outline: none;
+                }
+                p {
+                    font-size: 20px;
+                    font-weight: bold;
+                    position: absolute;
+                    bottom: 0;
+                    right: 5px;
+                    margin: 0;
+                    color: #434343;
                 }
             }
         }
         span {
             position: absolute;
-            bottom: 2px;
+            bottom: 3px;
             right: 5px;
         }
     }

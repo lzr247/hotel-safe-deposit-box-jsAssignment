@@ -11,6 +11,7 @@ export default new Vuex.Store({
     idleInputTimeout: null,
     stateOfLock: 'Unlocked',
     stateOfProcessArray: ['Ready', 'Error', 'Locking...', 'Unlocking...', 'Service', 'Validating...'],
+    stateOfProcessNoInput: ['Error', 'Locking...', 'Unlocking...', 'Service', 'Validating...'],
     stateOfProcess: 'Ready',
     prePassword: '',
     password: '',
@@ -95,13 +96,16 @@ export default new Vuex.Store({
         commit('idleScreen', '#47b2b2');
       }, 5000);
     },
-    inputValue({ dispatch, commit }, value) {
-      if(this.idleInputTimeout) {
-        clearTimeout(this.idleInputTimeout);
+    inputValue({ state, dispatch, commit }, value) {
+      if(!state.stateOfProcessNoInput.includes(state.stateOfProcess)) {
+        console.log("usao brate");
+        if(this.idleInputTimeout) {
+          clearTimeout(this.idleInputTimeout);
+        }
+        commit('inputValue', value);
+        dispatch('inputTimeout', value);
+        dispatch('idleScreen');
       }
-      commit('inputValue', value);
-      dispatch('inputTimeout', value);
-      dispatch('idleScreen');
     },
     inputTimeout({ commit }, value) {
       if(value == 'L') {

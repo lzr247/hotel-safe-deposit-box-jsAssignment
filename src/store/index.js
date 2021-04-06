@@ -17,6 +17,8 @@ export default new Vuex.Store({
     serviceStatus: false,
     prePassword: '',
     password: '',
+    responseCode: '',
+    snCode: '4815162342',
   },
   mutations: {
     idleScreen(state, value) {
@@ -32,7 +34,7 @@ export default new Vuex.Store({
         state.prePassword += value;
         state.stateOfProcess += value;
       } 
-      else if (value != 'L'){
+      else if (value != 'L' && !state.serviceStatus){
         if(state.stateOfProcessArray.includes(state.stateOfProcess)) {
           state.stateOfProcess = '';
         }
@@ -42,65 +44,90 @@ export default new Vuex.Store({
         }
       }
     },
-    inputTimeout(state) {
+    inputTimeout(state, value) {
       //provera unosa 
       setTimeout(() => {
         state.stateOfProcess = 'Validating...';
       }, 500);
       setTimeout(() => {
         // trebam da pitam is service true, ako jeste onda krajnji prePass saljem na api
-        // tacan unos
-        if(state.prePassword.length == 6) {
-          //ako je tacan unos onda pitam da li password postoji
-          if(!state.password && state.prePassword != '000000') {
+        if(state.serviceStatus) {
+          // poredim value koji sam vratio sa sn-om 
+          // ako je tacan unlocked -> service status = false
+          // ako nije tacan error => service
+          if(value == state.snCode) {
             setTimeout(() => {
-              state.stateOfProcess = 'Locking...';
+              state.stateOfProcess = 'Unlocking...';
             }, 1500);
             setTimeout(() => {
-              state.password = state.prePassword;
+              state.password = '';
               state.prePassword = '';
               state.stateOfProcess = 'Ready';
-              state.stateOfLock = 'Locked';
+              state.stateOfLock = 'Unlocked';
+              state.serviceStatus = false;
             }, 4500);
           } else {
-            // 
-            // password postoji
-            // tacan password
-            if(state.prePassword == '000000') {
+            state.stateOfProcess = 'Error';
+            setTimeout(() => {
               state.stateOfProcess = 'Service';
-
-            } else {
-              if(state.password == state.prePassword) {
-                setTimeout(() => {
-                  state.stateOfProcess = 'Unlocking...';
-                }, 1500);
-                setTimeout(() => {
-                  state.password = '';
-                  state.prePassword = '';
-                  state.stateOfProcess = 'Ready';
-                  state.stateOfLock = 'Unlocked';
-                }, 4500);
-              }
-              // netacan password
-              else {
-                setTimeout(() => {
-                  state.stateOfProcess = 'Error';
-                }, 1000);
-                setTimeout(() => {
-                  state.stateOfProcess = 'Ready';
-                }, 2500);
-                state.prePassword = '';
-              }
-            }
+            }, 1000);
+            state.serviceStatus = true;
           }
         } else {
-          setTimeout(() => {
-            state.stateOfProcess = 'Error';
-          }, 1000);
-          setTimeout(() => {
-            state.stateOfProcess = 'Ready';
-          }, 2500);
-          state.prePassword = '';
+          // ako nije service status onda normalno proveravam sifru
+          // tacan unos
+          if(state.prePassword.length == 6) {
+            //ako je tacan unos onda pitam da li password postoji
+            if(!state.password && state.prePassword != '000000') {
+              setTimeout(() => {
+                state.stateOfProcess = 'Locking...';
+              }, 1500);
+              setTimeout(() => {
+                state.password = state.prePassword;
+                state.prePassword = '';
+                state.stateOfProcess = 'Ready';
+                state.stateOfLock = 'Locked';
+              }, 4500);
+            } else {
+              // 
+              // password postoji
+              // tacan password
+              if(state.prePassword == '000000') {
+                state.stateOfProcess = 'Service';
+
+              } else {
+                if(state.password == state.prePassword) {
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Unlocking...';
+                  }, 1500);
+                  setTimeout(() => {
+                    state.password = '';
+                    state.prePassword = '';
+                    state.stateOfProcess = 'Ready';
+                    state.stateOfLock = 'Unlocked';
+                  }, 4500);
+                }
+                // netacan password
+                else {
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Error';
+                  }, 1000);
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Ready';
+                  }, 2500);
+                  state.prePassword = '';
+                }
+              }
+            }
+          } else {
+            setTimeout(() => {
+              state.stateOfProcess = 'Error';
+            }, 1000);
+            setTimeout(() => {
+              state.stateOfProcess = 'Ready';
+            }, 2500);
+            state.prePassword = '';
+          }
         }
       }, 1500);
     }
@@ -122,20 +149,22 @@ export default new Vuex.Store({
       }
     },
     inputTimeout({ state, commit }, value) {
-      if(value == 'L') {
+      if(value == 'L' && !state.serviceStatus) {
         commit('inputTimeout');
       } else {
         this.idleInputTimeout = setTimeout(() => {
           if(state.serviceStatus == true) {
             axios.get(`https://9w4qucosgf.execute-api.eu-central-1.amazonaws.com/default/CR-JS_team_M02a?code=${state.prePassword}`)
                  .then( res => {
-                   console.log("res: ", res.data);
+                    commit('inputTimeout', res.data);
                  })
                  .catch( err => {
                    console.log('greska');
                  })
+          } else {
+            commit('inputTimeout');
           }
-          commit('inputTimeout');
+
         }, 1200);
       }
     }

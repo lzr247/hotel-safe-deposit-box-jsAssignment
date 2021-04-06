@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import axios from 'axios'
 
 Vue.use(Vuex)
 
@@ -11,8 +12,9 @@ export default new Vuex.Store({
     idleInputTimeout: null,
     stateOfLock: 'Unlocked',
     stateOfProcessArray: ['Ready', 'Error', 'Locking...', 'Unlocking...', 'Service', 'Validating...'],
-    stateOfProcessNoInput: ['Error', 'Locking...', 'Unlocking...', 'Service', 'Validating...'],
+    stateOfProcessNoInput: ['Error', 'Locking...', 'Unlocking...', 'Validating...'],
     stateOfProcess: 'Ready',
+    serviceStatus: false,
     prePassword: '',
     password: '',
   },
@@ -23,7 +25,14 @@ export default new Vuex.Store({
     inputValue(state, value) {
       clearTimeout(this.idleScreenTimeout);
       state.screenBacklight = '#7fffff';
-      if(value != 'L'){
+      if(state.stateOfProcess == 'Service') {
+        state.stateOfProcess = '';
+        state.serviceStatus = true;
+      } else if(state.serviceStatus == true) {
+        state.prePassword += value;
+        state.stateOfProcess += value;
+      } 
+      else if (value != 'L'){
         if(state.stateOfProcessArray.includes(state.stateOfProcess)) {
           state.stateOfProcess = '';
         }
@@ -39,11 +48,11 @@ export default new Vuex.Store({
         state.stateOfProcess = 'Validating...';
       }, 500);
       setTimeout(() => {
+        // trebam da pitam is service true, ako jeste onda krajnji prePass saljem na api
         // tacan unos
         if(state.prePassword.length == 6) {
-          console.log('pass je 6');
           //ako je tacan unos onda pitam da li password postoji
-          if(!state.password) {
+          if(!state.password && state.prePassword != '000000') {
             setTimeout(() => {
               state.stateOfProcess = 'Locking...';
             }, 1500);
@@ -54,28 +63,34 @@ export default new Vuex.Store({
               state.stateOfLock = 'Locked';
             }, 4500);
           } else {
+            // 
             // password postoji
             // tacan password
-            if(state.password == state.prePassword) {
-              setTimeout(() => {
-                state.stateOfProcess = 'Unlocking...';
-              }, 1500);
-              setTimeout(() => {
-                state.password = '';
+            if(state.prePassword == '000000') {
+              state.stateOfProcess = 'Service';
+
+            } else {
+              if(state.password == state.prePassword) {
+                setTimeout(() => {
+                  state.stateOfProcess = 'Unlocking...';
+                }, 1500);
+                setTimeout(() => {
+                  state.password = '';
+                  state.prePassword = '';
+                  state.stateOfProcess = 'Ready';
+                  state.stateOfLock = 'Unlocked';
+                }, 4500);
+              }
+              // netacan password
+              else {
+                setTimeout(() => {
+                  state.stateOfProcess = 'Error';
+                }, 1000);
+                setTimeout(() => {
+                  state.stateOfProcess = 'Ready';
+                }, 2500);
                 state.prePassword = '';
-                state.stateOfProcess = 'Ready';
-                state.stateOfLock = 'Unlocked';
-              }, 4500);
-            }
-            // netacan password
-            else {
-              setTimeout(() => {
-                state.stateOfProcess = 'Error';
-              }, 1000);
-              setTimeout(() => {
-                state.stateOfProcess = 'Ready';
-              }, 2500);
-              state.prePassword = '';
+              }
             }
           }
         } else {
@@ -98,7 +113,6 @@ export default new Vuex.Store({
     },
     inputValue({ state, dispatch, commit }, value) {
       if(!state.stateOfProcessNoInput.includes(state.stateOfProcess)) {
-        console.log("usao brate");
         if(this.idleInputTimeout) {
           clearTimeout(this.idleInputTimeout);
         }
@@ -107,11 +121,20 @@ export default new Vuex.Store({
         dispatch('idleScreen');
       }
     },
-    inputTimeout({ commit }, value) {
+    inputTimeout({ state, commit }, value) {
       if(value == 'L') {
         commit('inputTimeout');
       } else {
         this.idleInputTimeout = setTimeout(() => {
+          if(state.serviceStatus == true) {
+            axios.get(`https://9w4qucosgf.execute-api.eu-central-1.amazonaws.com/default/CR-JS_team_M02a?code=${state.prePassword}`)
+                 .then( res => {
+                   console.log("res: ", res.data);
+                 })
+                 .catch( err => {
+                   console.log('greska');
+                 })
+          }
           commit('inputTimeout');
         }, 1200);
       }

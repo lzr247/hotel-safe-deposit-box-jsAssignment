@@ -64,6 +64,8 @@ export default {
                 position: absolute;
                 bottom: 5px;
                 right: 10px;
+                max-width: 100%;
+                overflow: auto;
             }
             #stateOfLock {
                 font-size: 1.3rem;

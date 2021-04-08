@@ -25,19 +25,22 @@ export default new Vuex.Store({
       state.screenBacklight = value;
     },
     inputValue(state, value) {
+      // clearing idle screen timeout and setting backlight to active version
       clearTimeout(this.idleScreenTimeout);
       state.screenBacklight = '#7fffff';
       if(state.stateOfProcess == 'Service') {
         state.stateOfProcess = '';
         state.serviceStatus = true;
-      } else if(state.serviceStatus == true) {
+      } 
+      if(state.serviceStatus == true) {
         state.prePassword += value;
         state.stateOfProcess += value;
       } 
-      else if (value != 'L' && !state.serviceStatus){
+      else if (value != 'L'){
         if(state.stateOfProcessArray.includes(state.stateOfProcess)) {
           state.stateOfProcess = '';
         }
+        // max input length is 6 for normal mode
         if(state.stateOfProcess.length < 6) {
           state.stateOfProcess += value;
           state.prePassword += value;
@@ -45,16 +48,13 @@ export default new Vuex.Store({
       }
     },
     inputTimeout(state, value) {
-      //provera unosa 
       setTimeout(() => {
         state.stateOfProcess = 'Validating...';
       }, 500);
       setTimeout(() => {
-        // trebam da pitam is service true, ako jeste onda krajnji prePass saljem na api
+        // if serviceStatus is active, then use value argument to check if it equals S/N code, if it does-UNLOCKED 
+        // service mode can only be active while stateOfLock is LOCKED
         if(state.serviceStatus) {
-          // poredim value koji sam vratio sa sn-om 
-          // ako je tacan unlocked -> service status = false
-          // ako nije tacan error => service
           if(value == state.snCode) {
             setTimeout(() => {
               state.stateOfProcess = 'Unlocking...';
@@ -74,10 +74,10 @@ export default new Vuex.Store({
             state.serviceStatus = true;
           }
         } else {
-          // ako nije service status onda normalno proveravam sifru
-          // tacan unos
+          // NORMAL MODE
+          // first we ask if input value length is 6
           if(state.prePassword.length == 6) {
-            //ako je tacan unos onda pitam da li password postoji
+            // if password doesn't exists and input value IS NOT 6x0 
             if(!state.password && state.prePassword != '000000') {
               setTimeout(() => {
                 state.stateOfProcess = 'Locking...';
@@ -88,38 +88,36 @@ export default new Vuex.Store({
                 state.stateOfProcess = 'Ready';
                 state.stateOfLock = 'Locked';
               }, 4500);
-            } else {
-              // 
-              // password postoji
-              // tacan password
-              if(state.prePassword == '000000') {
+            } else{
+              // password exists
+              // if password exists + stateOfLock is LOCKED and we input Master code that is 6x0, we go into SERVICE MODE
+              if(state.prePassword == '000000' && state.stateOfLock == 'Locked') {
                 state.stateOfProcess = 'Service';
-
               } else {
-                if(state.password == state.prePassword) {
-                  setTimeout(() => {
-                    state.stateOfProcess = 'Unlocking...';
-                  }, 1500);
-                  setTimeout(() => {
-                    state.password = '';
+                  if(state.password == state.prePassword) {
+                    setTimeout(() => {
+                      state.stateOfProcess = 'Unlocking...';
+                    }, 1500);
+                    setTimeout(() => {
+                      state.password = '';
+                      state.prePassword = '';
+                      state.stateOfProcess = 'Ready';
+                      state.stateOfLock = 'Unlocked';
+                    }, 4500);
+                  }
+                  else {
+                    setTimeout(() => {
+                      state.stateOfProcess = 'Error';
+                    }, 1000);
+                    setTimeout(() => {
+                      state.stateOfProcess = 'Ready';
+                    }, 2500);
                     state.prePassword = '';
-                    state.stateOfProcess = 'Ready';
-                    state.stateOfLock = 'Unlocked';
-                  }, 4500);
-                }
-                // netacan password
-                else {
-                  setTimeout(() => {
-                    state.stateOfProcess = 'Error';
-                  }, 1000);
-                  setTimeout(() => {
-                    state.stateOfProcess = 'Ready';
-                  }, 2500);
-                  state.prePassword = '';
-                }
+                  }
               }
-            }
+            } 
           } else {
+            // if input value length is not 6
             setTimeout(() => {
               state.stateOfProcess = 'Error';
             }, 1000);
@@ -133,12 +131,13 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    idleScreen({ commit }) {
+    idleScreen({state, commit }) {
       this.idleScreenTimeout = setTimeout(() => {
         commit('idleScreen', '#47b2b2');
       }, 5000);
     },
     inputValue({ state, dispatch, commit }, value) {
+      // processes in which we CAN'T input values
       if(!state.stateOfProcessNoInput.includes(state.stateOfProcess)) {
         if(this.idleInputTimeout) {
           clearTimeout(this.idleInputTimeout);
@@ -149,22 +148,23 @@ export default new Vuex.Store({
       }
     },
     inputTimeout({ state, commit }, value) {
+      // if we input L char, the 1.2s timeout will not be applied
       if(value == 'L' && !state.serviceStatus) {
         commit('inputTimeout');
       } else {
         this.idleInputTimeout = setTimeout(() => {
+          // action that will either commit call to api if the SERVICE mode is active, or commit mutation  
           if(state.serviceStatus == true) {
             axios.get(`https://9w4qucosgf.execute-api.eu-central-1.amazonaws.com/default/CR-JS_team_M02a?code=${state.prePassword}`)
                  .then( res => {
                     commit('inputTimeout', res.data);
                  })
                  .catch( err => {
-                   console.log('greska');
+                   console.log('error: ', err);
                  })
           } else {
             commit('inputTimeout');
           }
-
         }, 1200);
       }
     }

@@ -112,4 +112,27 @@ export default {
             right: 5px;
         }
     }
+
+    @media (max-width:500px) {
+        .safeDepositBox {
+            max-width: 300px!important;
+            height: 600px;
+            .backlitScreen {
+                height: 120px;
+                #stateOfLock {
+                    font-size: 1.2rem;
+                }
+                #stateOfProcess {
+                    font-size: 1.8rem;
+                }
+            }
+            .numKeypad {
+                button {
+                    width: 80px;
+                    height: 80px;
+                }
+            }
+        }
+    }
+
 </style>

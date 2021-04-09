@@ -7,7 +7,6 @@
         <div class="numKeypad">
             <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)">
                 {{value}}
-                <!-- <p v-if="(index+1)%2==0">{{btnIcons[index]}}</p> -->
                 <p v-if="index == 1">&#129045;</p>
                 <p v-if="index == 3">&#129044;</p>
                 <p v-if="index == 5">&#129046;</p>

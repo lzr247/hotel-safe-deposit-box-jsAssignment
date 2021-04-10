@@ -50,88 +50,91 @@ export default new Vuex.Store({
     inputTimeout(state, value) {
       setTimeout(() => {
         state.stateOfProcess = 'Validating...';
-      }, 500);
+      }, 300);
       setTimeout(() => {
-        // if serviceStatus is active, then use value argument to check if it equals S/N code, if it does-UNLOCKED 
-        // service mode can only be active while stateOfLock is LOCKED
-        if(state.serviceStatus) {
-          if(value == state.snCode) {
-            setTimeout(() => {
-              state.stateOfProcess = 'Unlocking...';
-            }, 1500);
-            setTimeout(() => {
-              state.password = '';
-              state.prePassword = '';
-              state.stateOfProcess = 'Ready';
-              state.stateOfLock = 'Unlocked';
-              state.serviceStatus = false;
-            }, 4500);
-          } else {
-            state.stateOfProcess = 'Error';
-            setTimeout(() => {
-              state.stateOfProcess = 'Service';
-            }, 1000);
-            state.serviceStatus = true;
-          }
-        } else {
-          // NORMAL MODE
-          // first we ask if input value length is 6
-          if(state.prePassword.length == 6) {
-            // if password doesn't exists and input value IS NOT 6x0 
-            if(!state.password && state.prePassword != '000000') {
+        switch(state.stateOfLock) {
+          // if stateOfLock is UNLOCKED then check if input is correct length and not 6x0 which we use to enter service mode
+          case 'Unlocked':
+            if(state.prePassword.length == 6 && state.prePassword != '000000') {
               setTimeout(() => {
                 state.stateOfProcess = 'Locking...';
-              }, 1500);
+              }, 1300);
               setTimeout(() => {
                 state.password = state.prePassword;
                 state.prePassword = '';
                 state.stateOfProcess = 'Ready';
                 state.stateOfLock = 'Locked';
-              }, 4500);
-            } else{
-              // password exists
-              // if password exists + stateOfLock is LOCKED and we input Master code that is 6x0, we go into SERVICE MODE
-              if(state.prePassword == '000000' && state.stateOfLock == 'Locked') {
+              }, 4300);
+            } else {
+              // if input value length is not 6 or input is 6x0
+              setTimeout(() => {
+                state.stateOfProcess = 'Error';
+              }, 1000);
+              setTimeout(() => {
+                state.stateOfProcess = 'Ready';
+              }, 2000);
+              state.prePassword = '';
+            }
+            break;
+          case 'Locked':
+            // if locked ask if in service mode or not
+            if(state.serviceStatus) {
+              // service mode, use value to compare to serial number of box 
+              if(value == state.snCode) {
+                setTimeout(() => {
+                  state.stateOfProcess = 'Unlocking...';
+                }, 1300);
+                setTimeout(() => {
+                  state.password = '';
+                  state.prePassword = '';
+                  state.stateOfProcess = 'Ready';
+                  state.stateOfLock = 'Unlocked';
+                  state.serviceStatus = false;
+                }, 4300);
+              } else {
+                state.stateOfProcess = 'Error';
+                setTimeout(() => {
+                  state.stateOfProcess = 'Service';
+                }, 1000);
+                state.serviceStatus = true;
+              }
+            } else {
+              // not in service mode just compare passcode and input 
+              // but if 6x0 then go into service mode
+              if(state.prePassword == '000000') { 
                 state.stateOfProcess = 'Service';
               } else {
-                  if(state.password == state.prePassword) {
-                    setTimeout(() => {
-                      state.stateOfProcess = 'Unlocking...';
-                    }, 1500);
-                    setTimeout(() => {
-                      state.password = '';
-                      state.prePassword = '';
-                      state.stateOfProcess = 'Ready';
-                      state.stateOfLock = 'Unlocked';
-                    }, 4500);
-                  }
-                  else {
-                    setTimeout(() => {
-                      state.stateOfProcess = 'Error';
-                    }, 1000);
-                    setTimeout(() => {
-                      state.stateOfProcess = 'Ready';
-                    }, 2500);
+                if(state.password == state.prePassword) {
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Unlocking...';
+                  }, 1300);
+                  setTimeout(() => {
+                    state.password = '';
                     state.prePassword = '';
-                  }
+                    state.stateOfProcess = 'Ready';
+                    state.stateOfLock = 'Unlocked';
+                  }, 4300);
+                }
+                else {
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Error';
+                  }, 1000);
+                  setTimeout(() => {
+                    state.stateOfProcess = 'Ready';
+                  }, 2000);
+                  state.prePassword = '';
+                }
               }
-            } 
-          } else {
-            // if input value length is not 6
-            setTimeout(() => {
-              state.stateOfProcess = 'Error';
-            }, 1000);
-            setTimeout(() => {
-              state.stateOfProcess = 'Ready';
-            }, 2500);
-            state.prePassword = '';
-          }
+            }
+            break;
+          default:
+            break;
         }
-      }, 1500);
+      }, 1300);
     }
   },
   actions: {
-    idleScreen({state, commit }) {
+    idleScreen({ commit }) {
       this.idleScreenTimeout = setTimeout(() => {
         commit('idleScreen', '#47b2b2');
       }, 5000);

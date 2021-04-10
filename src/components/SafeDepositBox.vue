@@ -5,7 +5,7 @@
             <div id="stateOfProcess">{{$store.state.stateOfProcess}}</div>
         </div>
         <div class="numKeypad">
-            <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)">
+            <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)" @keypress="$store.dispatch('inputValue', value)">
                 {{value}}
                 <p v-if="index == 1">&#129045;</p>
                 <p v-if="index == 3">&#129044;</p>
@@ -28,6 +28,7 @@ export default {
         }
     },
     mounted() {
+        document.addEventListener('keydown', e => this.$store.dispatch('inputValue', e.key.toUpperCase()))
         this.$store.dispatch('idleScreen');
     }
 };

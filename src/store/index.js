@@ -141,14 +141,17 @@ export default new Vuex.Store({
     },
     inputValue({ state, dispatch, commit }, value) {
       // processes in which we CAN'T input values
-      if(!state.stateOfProcessNoInput.includes(state.stateOfProcess)) {
-        if(this.idleInputTimeout) {
-          clearTimeout(this.idleInputTimeout);
+      if(state.btnValues.toString().includes(value)) {
+        if(!state.stateOfProcessNoInput.includes(state.stateOfProcess)) {
+          if(this.idleInputTimeout) {
+            clearTimeout(this.idleInputTimeout);
+          }
+          commit('inputValue', value);
+          dispatch('inputTimeout', value);
+          dispatch('idleScreen');
         }
-        commit('inputValue', value);
-        dispatch('inputTimeout', value);
-        dispatch('idleScreen');
       }
+
     },
     inputTimeout({ state, commit }, value) {
       // if we input L char, the 1.2s timeout will not be applied

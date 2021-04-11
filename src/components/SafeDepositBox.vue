@@ -1,11 +1,11 @@
 <template>
     <div class="safeDepositBox">
-        <div class="backlitScreen" :style="{background: $store.state.screenBacklight}">
-            <div id="stateOfLock">{{$store.state.stateOfLock}}</div>
-            <div id="stateOfProcess">{{$store.state.stateOfProcess}}</div>
+        <div class="safeDepositBox__backlitScreen" :style="{background: $store.state.screenBacklight}">
+            <div class="safeDepositBox__backlitScreen__stateOfLock">{{$store.state.stateOfLock}}</div>
+            <div class="safeDepositBox__backlitScreen__stateOfProcess">{{$store.state.stateOfProcess}}</div>
         </div>
-        <div class="numKeypad">
-            <button v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)" @keypress="$store.dispatch('inputValue', value)">
+        <div class="safeDepositBox__numKeypad">
+            <button class="safeDepositBox__numKeypad__button" v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)" @keypress="$store.dispatch('inputValue', value)">
                 {{value}}
                 <p v-if="index == 1">&#129045;</p>
                 <p v-if="index == 3">&#129044;</p>
@@ -47,7 +47,7 @@ export default {
         border: 2px solid #000;
         border-radius: 5px;
         box-shadow: 0 0 1px #000;
-        .backlitScreen {
+        &__backlitScreen {
             color: #434343;
             height: 140px;
             width: 85%;
@@ -58,7 +58,7 @@ export default {
             flex-direction: column;
             justify-content: space-between;
             position: relative;
-            #stateOfProcess {
+            &__stateOfProcess {
                 text-align: right;
                 font-size: 3rem;
                 position: absolute;
@@ -67,17 +67,17 @@ export default {
                 max-width: 100%;
                 overflow: auto;
             }
-            #stateOfLock {
+            &__stateOfLock {
                 font-size: 1.3rem;
                 position: absolute;
                 top: 5px;
                 left: 10px;
             }
         }
-        .numKeypad {
+        &__numKeypad {
             display: grid;
             grid-template-columns: 33% 33% 33%;
-            button {
+            &__button {
                 width: 110px;
                 height: 110px;
                 margin: 5px;
@@ -117,7 +117,7 @@ export default {
         .safeDepositBox {
             max-width: 300px!important;
             height: 600px;
-            .backlitScreen {
+            &__backlitScreen {
                 height: 120px;
                 #stateOfLock {
                     font-size: 1.2rem;
@@ -126,7 +126,7 @@ export default {
                     font-size: 1.8rem;
                 }
             }
-            .numKeypad {
+            &__numKeypad {
                 button {
                     width: 80px;
                     height: 80px;

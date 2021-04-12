@@ -5,7 +5,7 @@
             <div class="safeDepositBox__backlitScreen__stateOfProcess">{{$store.state.stateOfProcess}}</div>
         </div>
         <div class="safeDepositBox__numKeypad">
-            <button class="safeDepositBox__numKeypad__button" v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)" @keypress="$store.dispatch('inputValue', value)">
+            <button class="safeDepositBox__numKeypad__button" v-for="(value, index) in $store.state.btnValues" :key="index" @click="$store.dispatch('inputValue', value)">
                 {{value}}
                 <p v-if="index == 1">&#129045;</p>
                 <p v-if="index == 3">&#129044;</p>
@@ -78,8 +78,8 @@ export default {
             display: grid;
             grid-template-columns: 33% 33% 33%;
             &__button {
-                width: 110px;
-                height: 110px;
+                width: 115px;
+                height: 115px;
                 margin: 5px;
                 background: #63636e;
                 color: #f3f3f3;
@@ -119,10 +119,10 @@ export default {
             height: 600px;
             &__backlitScreen {
                 height: 120px;
-                #stateOfLock {
+                &__stateOfLock {
                     font-size: 1.2rem;
                 }
-                #stateOfProcess {
+                &__stateOfProcess {
                     font-size: 1.8rem;
                 }
             }
